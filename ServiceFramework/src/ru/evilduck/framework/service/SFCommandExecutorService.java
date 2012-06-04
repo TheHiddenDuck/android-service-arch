@@ -28,9 +28,9 @@ public class SFCommandExecutorService extends IntentService {
 
     private static final String TAG = "CommandExecutorService";
 
-    public static final String EXTRA_REQUEST_ID = SFApplication.PACKAGE + ".EXTRA_REQUEST_ID";
+    public static final String EXTRA_REQUEST_ID = SFApplication.PACKAGE.concat(".EXTRA_REQUEST_ID");
 
-    public static final String EXTRA_STATUS_RECEIVER = SFApplication.PACKAGE + ".STATUS_RECEIVER";
+    public static final String EXTRA_STATUS_RECEIVER = SFApplication.PACKAGE.concat(".STATUS_RECEIVER");
 
     public SFCommandExecutorService() {
 	super(TAG);
