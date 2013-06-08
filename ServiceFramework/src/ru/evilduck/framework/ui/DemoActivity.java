@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Alexander Osmanov (http://www.perfectearapp.com)
+ * Copyright (C) 2013 Alexander Osmanov (http://perfectear.educkapps.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,15 @@ package ru.evilduck.framework.ui;
 
 import ru.evilduck.framework.R;
 import ru.evilduck.framework.SFBaseActivity;
-import ru.evilduck.framework.handlers.impl.TestActionHandler;
+import ru.evilduck.framework.handlers.SFBaseCommand;
+import ru.evilduck.framework.handlers.impl.TestActionCommand;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -32,6 +36,8 @@ import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
 public class DemoActivity extends SFBaseActivity {
+
+    private static final String PROGRESS_DIALOG = "progress-dialog";
 
     private EditText text1;
 
@@ -70,7 +76,12 @@ public class DemoActivity extends SFBaseActivity {
     protected Dialog onCreateDialog(int id) {
 	ProgressDialog progressDialog = new ProgressDialog(this);
 	progressDialog.setMessage("Processing");
-	progressDialog.setCancelable(false);
+	progressDialog.setOnCancelListener(new OnCancelListener() {
+	    @Override
+	    public void onCancel(DialogInterface dialog) {
+		getServiceHelper().cancelCommand(requestId);
+	    }
+	});
 
 	return progressDialog;
     }
@@ -80,12 +91,14 @@ public class DemoActivity extends SFBaseActivity {
 	super.onResume();
 
 	if (requestId != -1 && !getServiceHelper().isPending(requestId)) {
-	    dismissDialog(0);
+	    dismissProgressDialog();
 	}
     }
 
     private void doIt() {
-	showDialog(0);
+	ProgressDialogFragment progress = new ProgressDialogFragment();
+	progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
+
 	requestId = getServiceHelper().exampleAction(text1.getText().toString(), text2.getText().toString());
     }
 
@@ -93,13 +106,58 @@ public class DemoActivity extends SFBaseActivity {
     public void onServiceCallback(int requestId, Intent requestIntent, int resultCode, Bundle resultData) {
 	super.onServiceCallback(requestId, requestIntent, resultCode, resultData);
 
-	if (TestActionHandler.ACTION_EXAMPLE_ACTION.equals(requestIntent.getAction())) {
-	    if (resultCode == TestActionHandler.RESPONSE_SUCCESS) {
+	if (getServiceHelper().check(requestIntent, TestActionCommand.class)) {
+	    if (resultCode == TestActionCommand.RESPONSE_SUCCESS) {
 		Toast.makeText(this, resultData.getString("data"), Toast.LENGTH_LONG).show();
+		dismissProgressDialog();
+	    } else if (resultCode == TestActionCommand.RESPONSE_PROGRESS) {
+		upodateProgressDialog(resultData.getInt(SFBaseCommand.EXTRA_PROGRESS, -1));
 	    } else {
 		Toast.makeText(this, resultData.getString("error"), Toast.LENGTH_LONG).show();
+		dismissProgressDialog();
 	    }
-	    dismissDialog(0);
+	}
+    }
+
+    public void cancelCommand() {
+	getServiceHelper().cancelCommand(requestId);
+    }
+
+    public static class ProgressDialogFragment extends DialogFragment {
+
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+	    ProgressDialog progressDialog = new ProgressDialog(getActivity());
+	    progressDialog.setMessage("Result: 0%");
+
+	    return progressDialog;
+	}
+
+	public void setProgress(int progress) {
+	    ((ProgressDialog) getDialog()).setMessage("Result: " + progress + "%");
+	}
+
+	@Override
+	public void onCancel(DialogInterface dialog) {
+	    super.onCancel(dialog);
+	    ((DemoActivity) getActivity()).cancelCommand();
+	}
+
+    }
+
+    private void dismissProgressDialog() {
+	ProgressDialogFragment progress = (ProgressDialogFragment) getSupportFragmentManager().findFragmentByTag(
+		PROGRESS_DIALOG);
+	if (progress != null) {
+	    progress.dismiss();
+	}
+    }
+
+    private void upodateProgressDialog(int progress) {
+	ProgressDialogFragment progressDialog = (ProgressDialogFragment) getSupportFragmentManager().findFragmentByTag(
+		PROGRESS_DIALOG);
+	if (progressDialog != null) {
+	    progressDialog.setProgress(progress);
 	}
     }
 

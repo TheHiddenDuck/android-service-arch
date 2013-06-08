@@ -3,7 +3,8 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:gravity="center_vertical"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:padding="16dip" >
 
     <EditText
         android:id="@+id/editText1"
@@ -19,6 +20,7 @@
         android:id="@+id/editText2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dip"
         android:imeOptions="actionDone"
         android:inputType="text" />
 
@@ -26,6 +28,7 @@
         android:id="@+id/button_button"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Test" />
+        android:layout_marginTop="8dip"
+        android:text="@string/concatenate_" />
 
 </LinearLayout>

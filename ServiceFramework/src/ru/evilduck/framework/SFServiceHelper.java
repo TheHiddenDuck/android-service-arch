@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Alexander Osmanov (http://www.perfectearapp.com)
+ * Copyright (C) 2013 Alexander Osmanov (http://perfectear.educkapps.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,15 @@ package ru.evilduck.framework;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ru.evilduck.framework.handlers.impl.TestActionHandler;
+import ru.evilduck.framework.handlers.SFBaseCommand;
+import ru.evilduck.framework.handlers.impl.TestActionCommand;
 import ru.evilduck.framework.service.SFCommandExecutorService;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.util.SparseArray;
 
@@ -56,17 +58,28 @@ public class SFServiceHelper {
     public int exampleAction(String argumentA, String argumentB) {
 	final int requestId = createId();
 
-	Intent i = createIntent(application, TestActionHandler.ACTION_EXAMPLE_ACTION, requestId);
-	i.putExtra(TestActionHandler.EXTRA_PARAM_1, argumentA);
-	i.putExtra(TestActionHandler.EXTRA_PARAM_2, argumentB);
-
+	Intent i = createIntent(application, new TestActionCommand(argumentA, argumentB), requestId);
 	return runRequest(requestId, i);
     }
 
     // =========================================
 
+    public void cancelCommand(int requestId) {
+	Intent i = new Intent(application, SFCommandExecutorService.class);
+	i.setAction(SFCommandExecutorService.ACTION_CANCEL_COMMAND);
+	i.putExtra(SFCommandExecutorService.EXTRA_REQUEST_ID, requestId);
+
+	application.startService(i);
+	pendingActivities.remove(requestId);
+    }
+
     public boolean isPending(int requestId) {
 	return pendingActivities.get(requestId) != null;
+    }
+
+    public boolean check(Intent intent, Class<? extends SFBaseCommand> clazz) {
+	Parcelable commandExtra = intent.getParcelableExtra(SFCommandExecutorService.EXTRA_COMMAND);
+	return commandExtra != null && commandExtra.getClass().equals(clazz);
     }
 
     private int createId() {
@@ -79,16 +92,20 @@ public class SFServiceHelper {
 	return requestId;
     }
 
-    private Intent createIntent(final Context context, String actionLogin, final int requestId) {
+    private Intent createIntent(final Context context, SFBaseCommand command, final int requestId) {
 	Intent i = new Intent(context, SFCommandExecutorService.class);
-	i.setAction(actionLogin);
+	i.setAction(SFCommandExecutorService.ACTION_EXECUTE_COMMAND);
 
+	i.putExtra(SFCommandExecutorService.EXTRA_COMMAND, command);
+	i.putExtra(SFCommandExecutorService.EXTRA_REQUEST_ID, requestId);
 	i.putExtra(SFCommandExecutorService.EXTRA_STATUS_RECEIVER, new ResultReceiver(new Handler()) {
 	    @Override
 	    protected void onReceiveResult(int resultCode, Bundle resultData) {
 		Intent originalIntent = pendingActivities.get(requestId);
 		if (isPending(requestId)) {
-		    pendingActivities.remove(requestId);
+		    if (resultCode != SFBaseCommand.RESPONSE_PROGRESS) {
+			pendingActivities.remove(requestId);
+		    }
 
 		    for (SFServiceCallbackListener currentListener : currentListeners) {
 			if (currentListener != null) {

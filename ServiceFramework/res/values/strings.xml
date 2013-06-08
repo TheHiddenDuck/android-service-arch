@@ -3,5 +3,6 @@
 
     <string name="hello">Hello World, ServiceFrameworkActivity!</string>
     <string name="app_name">ServiceFramework</string>
+    <string name="concatenate_">Concatenate!</string>
 
 </resources>

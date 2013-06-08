@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Alexander Osmanov (http://www.perfectearapp.com)
+ * Copyright (C) 2013 Alexander Osmanov (http://perfectear.educkapps.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
