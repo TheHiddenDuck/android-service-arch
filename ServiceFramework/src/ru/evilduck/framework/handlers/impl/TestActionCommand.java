@@ -64,7 +64,7 @@ public class TestActionCommand extends SFBaseCommand {
 	}
 
 	if (TextUtils.isEmpty(arg1) || TextUtils.isEmpty(arg2)) {
-	    data.putString("error", "Surprise mothafucka!");
+	    data.putString("error", "Surprise!");
 	    notifyFailure(data);
 	} else {
 	    data.putString("data", arg1 + arg2);
